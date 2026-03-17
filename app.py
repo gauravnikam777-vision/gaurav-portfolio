@@ -195,16 +195,22 @@ def admin_dashboard():
 @app.route('/admin/profile', methods=['POST'])
 @login_required
 def update_profile():
+    import base64
     f = request.form
     db = get_db()
     photo = db.execute('SELECT photo FROM profile').fetchone()['photo']
+
+    # Store photo as base64 data URL directly in DB
+    # This works on Vercel because it doesn't rely on filesystem
     if 'photo' in request.files:
         file = request.files['photo']
-        if file and allowed_file(file.filename):
-            fname = secure_filename(file.filename)
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], fname)
-            file.save(save_path)
-            photo = '/static/uploads/' + fname
+        if file and file.filename and allowed_file(file.filename):
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            mime = 'image/jpeg' if ext in ('jpg','jpeg') else f'image/{ext}'
+            file_data = file.read()
+            b64 = base64.b64encode(file_data).decode('utf-8')
+            photo = f'data:{mime};base64,{b64}'
+
     db.execute('''UPDATE profile SET name=?,headline=?,bio=?,tagline=?,location=?,email=?,phone=?,
                   linkedin=?,github=?,kaggle=?,resume_link=?,photo=?,
                   years_exp=?,projects_count=?,certs_count=?,domain=? WHERE id=1''',
