@@ -6,12 +6,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'gaurav_portfolio_secret_2026'
-
-# Use /tmp for Vercel (serverless) — writable directory
-import tempfile
-DB_PATH = os.path.join(tempfile.gettempdir(), 'portfolio.db')
-UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -19,7 +14,7 @@ def allowed_file(f):
     return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect('portfolio.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -316,11 +311,50 @@ def change_password():
     db.close()
     return redirect(url_for('admin_dashboard'))
 
+# ── FAVICON ──────────────────────────────────────────────
+@app.route('/favicon.ico')
+def favicon():
+    db = get_db()
+    row = db.execute("SELECT value FROM settings WHERE key='favicon'").fetchone()
+    db.close()
+    if row and row['value']:
+        # Serve uploaded favicon from static path
+        from flask import send_file
+        import os
+        path = os.path.join(os.path.dirname(__file__), 'static', row['value'].lstrip('/static/'))
+        if os.path.exists(path):
+            return send_file(path, mimetype='image/x-icon')
+    from flask import Response
+    # Default: tiny 1x1 transparent ico
+    ico = b'\x00\x00\x01\x00\x01\x00\x01\x01\x00\x00\x01\x00\x18\x00(\x00\x00\x00\x16\x00\x00\x00'
+    return Response(ico, mimetype='image/x-icon')
+
+# ── ADMIN: FAVICON UPLOAD ────────────────────────────────
+@app.route('/admin/favicon', methods=['POST'])
+@login_required
+def upload_favicon():
+    import tempfile, os
+    file = request.files.get('favicon')
+    if file and file.filename and allowed_file(file.filename):
+        fname = 'favicon_' + secure_filename(file.filename)
+        # Save to both tmp and static/uploads
+        save_path = os.path.join(os.path.dirname(__file__), 'static', 'uploads', fname)
+        tmp_path  = os.path.join(tempfile.gettempdir(), 'uploads', fname)
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        os.makedirs(os.path.dirname(tmp_path),  exist_ok=True)
+        file.save(save_path)
+        import shutil; shutil.copy(save_path, tmp_path)
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('favicon',?)",
+                   ('/static/uploads/' + fname,))
+        db.commit(); db.close()
+    return redirect(url_for('admin_dashboard') + '#settings')
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
 
-# Auto-init DB for Vercel serverless
+# Auto-init for Vercel serverless
 try:
     init_db()
 except Exception:
