@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{{ profile.name }} — Data Analyst</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0d0d1a;
+  --bg2:      #111128;
+  --bg3:      #13132a;
+  --purple:   #7c3aed;
+  --purple2:  #9d5cf6;
+  --teal:     #0abfbc;
+  --teal2:    #06d6a0;
+  --white:    #f0eeff;
+  --muted:    #7070a0;
+  --card:     rgba(20,20,45,0.9);
+  --border:   rgba(124,58,237,0.2);
+  --border2:  rgba(10,191,188,0.15);
+  --glow-p:   0 0 30px rgba(124,58,237,0.3);
+  --glow-t:   0 0 30px rgba(10,191,188,0.25);
+  --font-h:   'Sora', sans-serif;
+  --font-b:   'Manrope', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--white);overflow-x:hidden;cursor:none}
+#cur{position:fixed;width:8px;height:8px;background:var(--teal);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 14px var(--teal),0 0 28px rgba(10,191,188,0.4);transition:transform 0.08s}
+#cur-ring{position:fixed;width:32px;height:32px;border:1.5px solid rgba(124,58,237,0.6);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all 0.15s ease}
+#bgc{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--purple);border-radius:2px}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;justify-content:space-between;align-items:center;padding:1.1rem 6%;background:rgba(13,13,26,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:var(--font-h);font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,var(--purple2),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.02em}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:0.85rem;font-weight:500;transition:color 0.2s}
+.nav-links a:hover{color:var(--white)}
+.nav-admin{font-size:0.75rem;color:var(--teal);border:1px solid var(--border2);padding:0.4rem 1rem;border-radius:100px;text-decoration:none;font-weight:500;transition:all 0.2s}
+.nav-admin:hover{background:rgba(10,191,188,0.1)}
+
+section{position:relative;z-index:1;padding:6.5rem 6%}
+.sec-chip{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(124,58,237,0.12);border:1px solid var(--border);color:var(--purple2);font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:0.35rem 0.9rem;border-radius:100px;margin-bottom:1.2rem}
+.sec-chip::before{content:'';width:5px;height:5px;background:var(--teal);border-radius:50%;animation:blink 1.8s infinite}
+.sec-title{font-family:var(--font-h);font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;line-height:1.1;letter-spacing:-0.02em;margin-bottom:1rem}
+.t{background:linear-gradient(135deg,var(--teal),var(--teal2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.p{background:linear-gradient(135deg,var(--purple2),#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sec-desc{color:var(--muted);font-size:0.95rem;max-width:500px;line-height:1.8;margin-bottom:3.5rem}
+.center{text-align:center}.center .sec-desc{margin-left:auto;margin-right:auto}.center .sec-chip{display:inline-flex}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:5rem;text-align:center;overflow:hidden}
+.hero-avatar{width:120px;height:120px;border-radius:50%;border:2px solid var(--border);box-shadow:0 0 0 4px rgba(124,58,237,0.15),0 0 40px rgba(124,58,237,0.3);overflow:hidden;margin-bottom:2rem;animation:fadeUp 0.8s ease both;position:relative}
+.hero-avatar img{width:100%;height:100%;object-fit:cover}
+.hero-avatar-ph{width:100%;height:100%;background:linear-gradient(135deg,var(--bg3),var(--purple));display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:2.5rem;font-weight:700}
+.hero-avatar::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid transparent;border-top-color:var(--teal);border-right-color:var(--purple2);animation:spin 3s linear infinite}
+.hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(124,58,237,0.1);border:1px solid var(--border);color:var(--purple2);font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:0.35rem 1rem;border-radius:100px;margin-bottom:1.5rem;animation:fadeUp 0.8s 0.05s ease both}
+.hero-badge .hl{color:var(--teal)}
+.hero-name{font-family:var(--font-h);font-size:clamp(2.5rem,6vw,5rem);font-weight:700;letter-spacing:-0.03em;line-height:1.05;margin-bottom:1rem;animation:fadeUp 0.8s 0.1s ease both;background:linear-gradient(135deg,var(--white) 30%,var(--purple2) 70%,var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-role{font-size:1.05rem;color:var(--muted);font-weight:400;letter-spacing:0.04em;margin-bottom:1.5rem;animation:fadeUp 0.8s 0.2s ease both;min-height:1.6rem}
+.hero-bio{font-size:1rem;color:#8080b0;max-width:560px;margin:0 auto 2.5rem;line-height:1.8;animation:fadeUp 0.8s 0.3s ease both}
+.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadeUp 0.8s 0.4s ease both}
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.85rem 2rem;border-radius:100px;font-family:var(--font-b);font-size:0.88rem;font-weight:600;text-decoration:none;border:none;cursor:none;transition:all 0.25s}
+.btn-primary{background:linear-gradient(135deg,var(--purple),var(--teal));color:white;box-shadow:0 4px 20px rgba(124,58,237,0.4)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(124,58,237,0.5)}
+.btn-ghost{background:rgba(255,255,255,0.05);color:var(--white);border:1px solid rgba(255,255,255,0.1)}
+.btn-ghost:hover{background:rgba(255,255,255,0.1);transform:translateY(-2px)}
+.hero-stats{display:flex;gap:3.5rem;justify-content:center;margin-top:3.5rem;padding-top:3rem;border-top:1px solid var(--border);animation:fadeUp 0.8s 0.5s ease both;width:100%;max-width:600px}
+.stat{text-align:center}
+.stat-n{font-family:var(--font-h);font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--purple2),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-l{font-size:0.72rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:0.2rem;font-weight:500}
+
+/* ABOUT */
+.about{background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+.about-grid{display:grid;grid-template-columns:300px 1fr;gap:5rem;align-items:start}
+.about-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2rem;text-align:center;position:sticky;top:6rem;box-shadow:var(--glow-p)}
+.about-photo{width:110px;height:110px;border-radius:50%;margin:0 auto 1.2rem;overflow:hidden;border:2px solid var(--border);box-shadow:0 0 20px rgba(124,58,237,0.25)}
+.about-photo img{width:100%;height:100%;object-fit:cover}
+.about-photo-ph{width:100%;height:100%;background:linear-gradient(135deg,var(--bg3),var(--purple));display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:2rem;font-weight:700}
+.about-name{font-family:var(--font-h);font-size:1.05rem;font-weight:700;margin-bottom:0.3rem}
+.about-role{font-size:0.78rem;color:var(--teal);font-weight:500;margin-bottom:1.2rem}
+.about-card-tags{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center}
+.atag{background:rgba(124,58,237,0.12);border:1px solid var(--border);color:var(--purple2);font-size:0.72rem;padding:0.25rem 0.65rem;border-radius:100px;font-weight:500}
+.adivider{height:1px;background:var(--border);margin:1.2rem 0}
+.about-links{display:flex;flex-direction:column;gap:0.6rem}
+.alink{display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0.9rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;text-decoration:none;color:var(--muted);font-size:0.8rem;font-weight:500;transition:all 0.2s}
+.alink:hover{color:var(--white);border-color:var(--border);background:rgba(124,58,237,0.08)}
+.alink .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.about-text p{color:#8080b0;line-height:1.9;margin-bottom:1.2rem;font-size:0.97rem}
+.about-text p strong{color:var(--white);font-weight:600}
+.about-text-tags{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1.5rem}
+
+/* SKILLS */
+.skills{background:var(--bg3)}
+.skills-outer{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.sg{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.8rem}
+.sg-title{font-family:var(--font-h);font-size:0.78rem;font-weight:700;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.4rem;display:flex;align-items:center;gap:0.5rem}
+.sg-title::before{content:'';width:6px;height:6px;background:var(--teal);border-radius:50%}
+.si{margin-bottom:1.2rem}
+.si:last-child{margin-bottom:0}
+.si-top{display:flex;justify-content:space-between;margin-bottom:0.5rem}
+.si-name{font-size:0.85rem;font-weight:500;color:var(--white)}
+.si-pct{font-size:0.78rem;color:var(--purple2);font-weight:600}
+.si-track{height:5px;background:rgba(124,58,237,0.12);border-radius:3px;overflow:hidden}
+.si-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple),var(--teal));width:0;transition:width 1.3s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 10px rgba(10,191,188,0.35)}
+
+/* PROJECTS */
+.pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.6rem}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.8rem;position:relative;overflow:hidden;transition:all 0.3s;transform-style:preserve-3d}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--purple2),transparent);transform:scaleX(0);transform-origin:center;transition:transform 0.4s}
+.pc:hover{border-color:rgba(124,58,237,0.4);box-shadow:var(--glow-p),0 20px 60px rgba(0,0,0,0.4);transform:translateY(-6px)}
+.pc:hover::before{transform:scaleX(1)}
+.pc-glow{position:absolute;top:-30%;right:-20%;width:200px;height:200px;background:radial-gradient(circle,rgba(124,58,237,0.07),transparent);pointer-events:none}
+.pc-emoji{font-size:2.2rem;margin-bottom:1rem;display:block}
+.pc-num{font-size:0.65rem;font-weight:700;color:var(--purple2);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.5rem;opacity:0.7}
+.pc h3{font-family:var(--font-h);font-size:1rem;font-weight:700;margin-bottom:0.6rem;line-height:1.3}
+.pc p{font-size:0.85rem;color:var(--muted);line-height:1.7;margin-bottom:0.8rem}
+.pc-details{font-size:0.8rem;color:#606090;line-height:1.65;padding:0.7rem 0.9rem;background:rgba(124,58,237,0.05);border-left:2px solid var(--border);border-radius:0 6px 6px 0;margin-bottom:1rem}
+.pc-tools{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1.2rem}
+.tool{background:rgba(10,191,188,0.08);border:1px solid rgba(10,191,188,0.2);color:var(--teal);font-size:0.7rem;font-weight:500;padding:0.2rem 0.55rem;border-radius:100px}
+.pc-links{display:flex;gap:0.8rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05)}
+.pl{font-size:0.78rem;font-weight:600;color:var(--purple2);text-decoration:none;transition:color 0.2s}
+.pl:hover{color:var(--teal)}
+.ps{position:absolute;top:1.2rem;right:1.2rem;font-size:0.65rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:100px;letter-spacing:0.06em}
+.s-done{background:rgba(6,214,160,0.1);color:var(--teal2);border:1px solid rgba(6,214,160,0.25)}
+.s-wip{background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)}
+.s-up{background:rgba(124,58,237,0.1);color:var(--purple2);border:1px solid var(--border)}
+
+/* CERTS */
+.certs{background:var(--bg2)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.4rem;transition:all 0.25s;display:flex;flex-direction:column;gap:0.4rem;position:relative;overflow:hidden}
+.cc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--teal));transform:scaleX(0);transform-origin:left;transition:transform 0.3s}
+.cc:hover{border-color:rgba(124,58,237,0.35);transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+.cc:hover::after{transform:scaleX(1)}
+.cc-name{font-size:0.87rem;font-weight:600;color:var(--white);line-height:1.4}
+.cc-issuer{font-size:0.76rem;color:var(--teal);font-weight:500}
+.cc-year{font-size:0.72rem;color:var(--muted)}
+
+/* EDUCATION */
+.education{background:var(--bg3)}
+.eg{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.ec{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:2rem;position:relative;overflow:hidden;transition:all 0.3s}
+.ec::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(180deg,var(--purple),var(--teal))}
+.ec:hover{border-color:rgba(10,191,188,0.3);box-shadow:var(--glow-t);transform:translateY(-4px)}
+.ec-year{display:inline-block;background:rgba(10,191,188,0.1);border:1px solid rgba(10,191,188,0.2);color:var(--teal);font-size:0.72rem;font-weight:600;padding:0.2rem 0.7rem;border-radius:100px;margin-bottom:1rem;letter-spacing:0.05em}
+.ec-deg{font-family:var(--font-h);font-size:1rem;font-weight:700;color:var(--white);margin-bottom:0.4rem;line-height:1.3}
+.ec-inst{font-size:0.85rem;color:var(--purple2);font-weight:500;margin-bottom:0.8rem}
+.ec-desc{font-size:0.82rem;color:var(--muted);line-height:1.65}
+
+/* CONTACT */
+.contact{background:linear-gradient(180deg,var(--bg2) 0%,var(--bg) 100%)}
+.contact-inner{max-width:680px;margin:0 auto;text-align:center}
+.contact-inner .sec-desc{margin:0 auto 3rem}
+.cl-wrap{display:flex;flex-direction:column;gap:0.9rem;max-width:460px;margin:0 auto}
+.cl{display:flex;align-items:center;gap:1.2rem;padding:1.1rem 1.5rem;background:var(--card);border:1px solid var(--border);border-radius:14px;text-decoration:none;color:var(--white);transition:all 0.25s}
+.cl:hover{border-color:rgba(124,58,237,0.5);box-shadow:var(--glow-p);transform:translateX(6px)}
+.cl-icon{font-size:1.2rem;width:34px;text-align:center}
+.cl-label{font-size:0.67rem;font-weight:700;color:var(--purple2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.1rem}
+.cl-val{font-size:0.85rem;color:var(--muted)}
+.cl-arr{margin-left:auto;color:var(--muted);transition:transform 0.2s}
+.cl:hover .cl-arr{transform:translateX(4px);color:var(--teal)}
+
+footer{background:#08080f;border-top:1px solid var(--border);text-align:center;padding:2rem;font-size:0.78rem;color:var(--muted);letter-spacing:0.04em}
+footer strong{color:var(--white)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.reveal{opacity:0;transform:translateY(28px);transition:all 0.65s ease}
+.reveal.on{opacity:1;transform:translateY(0)}
+
+/* ── HAMBURGER BUTTON ── */
+.ham-btn{display:none;background:none;border:none;cursor:pointer;padding:6px;flex-direction:column;gap:5px;z-index:200}
+.ham-btn span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .3s}
+.ham-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.ham-btn.open span:nth-child(2){opacity:0}
+.ham-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ── MOBILE NAV DRAWER ── */
+#mob-nav{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:150;
+  background:rgba(13,13,26,.97);backdrop-filter:blur(20px);
+  flex-direction:column;align-items:center;justify-content:center;gap:2rem}
+#mob-nav.open{display:flex}
+#mob-nav a{font-family:var(--font-h);font-size:1.6rem;font-weight:700;color:var(--white);
+  text-decoration:none;letter-spacing:-.02em;transition:color .2s}
+#mob-nav a:hover{color:var(--teal)}
+.mob-close{position:absolute;top:1.5rem;right:1.5rem;background:none;border:none;
+  color:var(--muted);font-size:1.4rem;cursor:pointer;padding:6px}
+
+@media(max-width:900px){
+  .about-grid{grid-template-columns:1fr}
+  .about-card{position:static}
+  .skills-outer,.eg{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .ham-btn{display:flex}
+  nav{padding:1rem 5%}
+  section{padding:5rem 5%}
+}
+
+@media(max-width:600px){
+  .hero-stats{gap:1.8rem;flex-wrap:wrap}
+  .stat-n{font-size:1.5rem}
+  .hero-btns{flex-direction:column;align-items:center;gap:.7rem}
+  .btn{width:100%;justify-content:center;max-width:260px}
+  .pg{grid-template-columns:1fr}
+  .cg{grid-template-columns:1fr}
+  .eg{grid-template-columns:1fr}
+  .skills-outer{grid-template-columns:1fr}
+  .hero-name{font-size:clamp(2rem,10vw,3.5rem)}
+  section{padding:4rem 4%}
+  .sec-title{font-size:clamp(1.6rem,6vw,2.2rem)}
+  .hero-bio{font-size:.92rem}
+  .pc{padding:1.4rem}
+  .sg{padding:1.4rem}
+  .cl-wrap{max-width:100%}
+  .about-grid{gap:2rem}
+  .hero-avatar{width:96px;height:96px}
+}
+
+@media(max-width:380px){
+  .hero-stats{gap:1.2rem}
+  .hero-name{font-size:2rem}
+  section{padding:3.5rem 4%}
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<canvas id="bgc"></canvas>
+
+<nav>
+  <div class="nav-logo">{{ profile.name.split()[0][0] }}{{ profile.name.split()[1][0] if profile.name.split()|length > 1 else '' }}{{ profile.name.split()[2][0] if profile.name.split()|length > 2 else '' }}</div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#projects">Projects</a></li>
+    <li><a href="#certs">Certs</a></li>
+    <li><a href="#education">Education</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="/admin" class="nav-admin">⚙ Admin</a>
+  <button class="ham-btn" id="hamBtn" onclick="toggleMob()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE NAV -->
+<div id="mob-nav">
+  <button class="mob-close" onclick="toggleMob()">✕</button>
+  <a href="#about" onclick="toggleMob()">About</a>
+  <a href="#skills" onclick="toggleMob()">Skills</a>
+  <a href="#projects" onclick="toggleMob()">Projects</a>
+  <a href="#certs" onclick="toggleMob()">Certs</a>
+  <a href="#education" onclick="toggleMob()">Education</a>
+  <a href="#contact" onclick="toggleMob()">Contact</a>
+  <a href="/admin" onclick="toggleMob()" style="color:var(--teal);font-size:1rem;letter-spacing:.05em">⚙ Admin Panel</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-avatar">
+    {% if profile.photo %}<img src="{{ profile.photo }}" alt="{{ profile.name }}"/>
+    {% else %}<div class="hero-avatar-ph">{{ profile.name[0] }}</div>{% endif %}
+  </div>
+  <div class="hero-badge">✦ <span class="hl">{{ profile.location }}</span> · Open to Work</div>
+  <h1 class="hero-name">{{ profile.name }}</h1>
+  <div class="hero-role" id="typed-role"></div>
+  <p class="hero-bio">{{ profile.bio }}</p>
+  <div class="hero-btns">
+    <a href="#projects" class="btn btn-primary">View Projects ↓</a>
+    <a href="#contact" class="btn btn-ghost">Let's Connect</a>
+    {% if profile.resume_link %}<a href="{{ profile.resume_link }}" target="_blank" class="btn btn-ghost">Resume ↗</a>{% endif %}
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-n">{{ profile.years_exp }}</div><div class="stat-l">Years</div></div>
+    <div class="stat"><div class="stat-n">{{ profile.projects_count }}</div><div class="stat-l">Projects</div></div>
+    <div class="stat"><div class="stat-n">{{ profile.certs_count }}</div><div class="stat-l">Certs</div></div>
+    <div class="stat"><div class="stat-n">{{ profile.domain }}</div><div class="stat-l">Domain</div></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-grid">
+    <div class="about-card reveal">
+      <div class="about-photo">
+        {% if profile.photo %}<img src="{{ profile.photo }}" alt="{{ profile.name }}"/>
+        {% else %}<div class="about-photo-ph">{{ profile.name[0] }}</div>{% endif %}
+      </div>
+      <div class="about-name">{{ profile.name }}</div>
+      <div class="about-role">{{ profile.headline }}</div>
+      <div class="about-card-tags">
+        <span class="atag">BBA-CA</span><span class="atag">MCA</span>
+        <span class="atag">Pune</span><span class="atag">Open to Work</span>
+      </div>
+      <div class="adivider"></div>
+      <div class="about-links">
+        {% if profile.linkedin %}<a href="{{ profile.linkedin }}" target="_blank" class="alink"><span class="dot" style="background:#0A66C2"></span>LinkedIn</a>{% endif %}
+        {% if profile.github %}<a href="{{ profile.github }}" target="_blank" class="alink"><span class="dot" style="background:#ddd"></span>GitHub</a>{% endif %}
+        {% if profile.kaggle %}<a href="{{ profile.kaggle }}" target="_blank" class="alink"><span class="dot" style="background:#20BEFF"></span>Kaggle</a>{% endif %}
+        <a href="mailto:{{ profile.email }}" class="alink"><span class="dot" style="background:var(--teal)"></span>{{ profile.email }}</a>
+      </div>
+    </div>
+    <div class="about-text">
+      <div class="sec-chip">About Me</div>
+      <h2 class="sec-title">Who I <span class="p">Am</span></h2>
+      <p class="reveal">I'm <strong>{{ profile.name }}</strong> — a data analyst fresher from <strong>{{ profile.location }}</strong> with a BBA-CA background, currently pursuing MCA at Sinhgad Institute of Management, Pune.</p>
+      <p class="reveal">My focus is <strong>e-commerce analytics</strong> — understanding customer behavior, sales patterns, and operational data. I build end-to-end: SQL extraction → Python analysis → Power BI dashboard → business recommendation.</p>
+      <p class="reveal">I don't have years of experience yet. What I have is <strong>consistency</strong> and work you can verify — every project is on GitHub, every step is documented.</p>
+      <div class="about-text-tags reveal">
+        <span class="atag">E-commerce Analytics</span><span class="atag">SQL</span>
+        <span class="atag">Python</span><span class="atag">Power BI</span>
+        <span class="atag">Tableau</span><span class="atag">Fresher · Open to Work</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section class="skills" id="skills">
+  <div class="center">
+    <div class="sec-chip">Technical Skills</div>
+    <h2 class="sec-title">What I <span class="t">Work With</span></h2>
+    <p class="sec-desc">Honest levels — no inflation. Reflects actual current proficiency.</p>
+  </div>
+  <div class="skills-outer">
+    {% for cat, items in skill_cats.items() %}
+    <div class="sg reveal">
+      <div class="sg-title">{{ cat }}</div>
+      {% for s in items %}
+      <div class="si">
+        <div class="si-top"><span class="si-name">{{ s.name }}</span><span class="si-pct">{{ s.level }}%</span></div>
+        <div class="si-track"><div class="si-fill" data-level="{{ s.level }}"></div></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="center">
+    <div class="sec-chip">Portfolio Projects</div>
+    <h2 class="sec-title">Real Work. <span class="p">Real Data.</span></h2>
+    <p class="sec-desc">All projects use real datasets and answer actual business questions end-to-end.</p>
+  </div>
+  <div class="pg">
+    {% for p in projects %}
+    <div class="pc reveal">
+      <div class="pc-glow"></div>
+      <span class="ps {{ 's-done' if p.status=='Completed' else ('s-wip' if p.status=='In Progress' else 's-up') }}">{{ p.status }}</span>
+      <span class="pc-emoji">{{ p.emoji or '📊' }}</span>
+      <div class="pc-num">Project {{ '%02d'|format(loop.index) }}</div>
+      <h3>{{ p.title }}</h3>
+      <p>{{ p.description }}</p>
+      {% if p.details %}<div class="pc-details">{{ p.details }}</div>{% endif %}
+      <div class="pc-tools">{% for t in p.tools.split(',') %}<span class="tool">{{ t.strip() }}</span>{% endfor %}</div>
+      <div class="pc-links">
+        {% if p.github_link %}<a href="{{ p.github_link }}" target="_blank" class="pl">⬡ GitHub</a>{% endif %}
+        {% if p.kaggle_link %}<a href="{{ p.kaggle_link }}" target="_blank" class="pl">◈ Kaggle</a>{% endif %}
+        {% if p.demo_link %}<a href="{{ p.demo_link }}" target="_blank" class="pl">↗ Demo</a>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- CERTIFICATIONS -->
+<section class="certs" id="certs">
+  <div class="center">
+    <div class="sec-chip">Certifications</div>
+    <h2 class="sec-title">{{ profile.certs_count }} <span class="t">Credentials</span></h2>
+    <p class="sec-desc">From NPTEL, IBM, Google, Microsoft, Forage and more.</p>
+  </div>
+  <div class="cg">
+    {% for c in certs %}
+    <div class="cc reveal">
+      <div class="cc-name">{{ c.name }}</div>
+      <div class="cc-issuer">{{ c.issuer }}</div>
+      <div class="cc-year">{{ c.year }}{% if c.credential_id %} · {{ c.credential_id[:14] }}{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- EDUCATION -->
+<section class="education" id="education">
+  <div class="center">
+    <div class="sec-chip">Education</div>
+    <h2 class="sec-title">Academic <span class="p">Background</span></h2>
+    <p class="sec-desc">BBA-CA + MCA — business foundation meets technical depth.</p>
+  </div>
+  <div class="eg">
+    {% for e in education %}
+    <div class="ec reveal">
+      <div class="ec-year">{{ e.year }}</div>
+      <div class="ec-deg">{{ e.degree }}</div>
+      <div class="ec-inst">{{ e.institution }}</div>
+      <div class="ec-desc">{{ e.description }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="contact-inner">
+    <div class="sec-chip" style="margin:0 auto 1.2rem">Get In Touch</div>
+    <h2 class="sec-title">Let's <span class="t">Connect</span></h2>
+    <p class="sec-desc">Looking for data analyst roles — fresher/internship/entry-level. Based in Pune, open to remote.</p>
+    <div class="cl-wrap">
+      {% if profile.linkedin %}
+      <a href="{{ profile.linkedin }}" target="_blank" class="cl reveal">
+        <span class="cl-icon">💼</span>
+        <div><div class="cl-label">LinkedIn</div><div class="cl-val">{{ profile.linkedin.split('in/')[1].rstrip('/') if 'in/' in profile.linkedin else 'View Profile' }}</div></div>
+        <span class="cl-arr">→</span>
+      </a>{% endif %}
+      {% if profile.github %}
+      <a href="{{ profile.github }}" target="_blank" class="cl reveal">
+        <span class="cl-icon">⬡</span>
+        <div><div class="cl-label">GitHub</div><div class="cl-val">{{ profile.github.split('github.com/')[1] if 'github.com/' in profile.github else profile.github }}</div></div>
+        <span class="cl-arr">→</span>
+      </a>{% endif %}
+      {% if profile.kaggle %}
+      <a href="{{ profile.kaggle }}" target="_blank" class="cl reveal">
+        <span class="cl-icon">◈</span>
+        <div><div class="cl-label">Kaggle</div><div class="cl-val">{{ profile.kaggle.split('kaggle.com/')[1] if 'kaggle.com/' in profile.kaggle else profile.kaggle }}</div></div>
+        <span class="cl-arr">→</span>
+      </a>{% endif %}
+      <a href="mailto:{{ profile.email }}" class="cl reveal">
+        <span class="cl-icon">✉</span>
+        <div><div class="cl-label">Email</div><div class="cl-val">{{ profile.email }}</div></div>
+        <span class="cl-arr">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>© 2026 <strong>{{ profile.name }}</strong> · Data Analyst · Pune, Maharashtra 🇮🇳</footer>
+
+<script>
+// Cursor — disable on touch devices
+if(window.matchMedia('(hover:hover)').matches){
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+document.addEventListener('mousemove',e=>{
+  cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';
+  setTimeout(()=>{ring.style.left=e.clientX+'px';ring.style.top=e.clientY+'px';},80);
+});
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.transform='translate(-50%,-50%) scale(2.5)';ring.style.transform='translate(-50%,-50%) scale(1.4)';ring.style.borderColor='var(--teal)'});
+  el.addEventListener('mouseleave',()=>{cur.style.transform='translate(-50%,-50%) scale(1)';ring.style.transform='translate(-50%,-50%) scale(1)';ring.style.borderColor='rgba(124,58,237,0.6)'});
+});
+} else {
+  document.getElementById('cur').style.display='none';
+  document.getElementById('cur-ring').style.display='none';
+}
+
+// Mobile nav toggle
+function toggleMob(){
+  const nav=document.getElementById('mob-nav');
+  const btn=document.getElementById('hamBtn');
+  nav.classList.toggle('open');
+  btn.classList.toggle('open');
+  document.body.style.overflow=nav.classList.contains('open')?'hidden':'';
+}
+
+// Particle canvas
+const canvas=document.getElementById('bgc'),ctx=canvas.getContext('2d');
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+resize();addEventListener('resize',resize);
+const pts=Array.from({length:75},()=>({
+  x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+  vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,
+  r:Math.random()*1.5+.3,c:Math.random()>.5?'124,58,237':'10,191,188'
+}));
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;
+    if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${p.c},0.5)`;ctx.fill();
+  });
+  pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d<115){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle=`rgba(124,58,237,${.11*(1-d/115)})`;ctx.lineWidth=.5;ctx.stroke();}
+  }));
+  requestAnimationFrame(draw);
+}
+draw();
+
+// Typing effect
+const roles=['{{ profile.headline }}','SQL · Python · Power BI','E-commerce Analytics','Building in Public. Every Day.'];
+let ri=0,ci=0,del=false;
+const tel=document.getElementById('typed-role');
+function type(){
+  const c=roles[ri];
+  if(!del){tel.textContent=c.slice(0,++ci);if(ci===c.length){del=true;setTimeout(type,2000);return;}}
+  else{tel.textContent=c.slice(0,--ci);if(ci===0){del=false;ri=(ri+1)%roles.length;}}
+  setTimeout(type,del?38:58);
+}
+setTimeout(type,1200);
+
+// Scroll reveal
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('on'),i*70);});
+},{threshold:.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// Skill bars
+const sobs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.si-fill').forEach(b=>b.style.width=b.dataset.level+'%');sobs.unobserve(e.target);}});
+},{threshold:.2});
+document.querySelectorAll('.sg').forEach(el=>sobs.observe(el));
+
+// 3D tilt
+document.querySelectorAll('.pc').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    c.style.transform=`translateY(-6px) rotateX(${-y*7}deg) rotateY(${x*7}deg)`;
+  });
+  c.addEventListener('mouseleave',()=>{c.style.transform='';});
+});
+</script>
+</body>
+</html>

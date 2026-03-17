@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Dashboard — GGN Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#020408;--bg2:#040c14;--cyan:#00d4ff;--cyan2:#00ffcc;--cyan-dim:rgba(0,212,255,0.08);--border:rgba(0,212,255,0.18);--text:#e0f0ff;--muted:#5a7a8a;--card:rgba(4,14,24,0.95);--danger:#ff4757;--success:#00ffcc;--glow:0 0 20px rgba(0,212,255,0.3)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;padding:1.5rem 0}
+.sidebar-logo{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;color:var(--cyan);padding:0 1.5rem 1.5rem;border-bottom:1px solid var(--border);text-shadow:var(--glow);letter-spacing:0.1em}
+.sidebar-logo small{display:block;font-size:0.6rem;color:var(--muted);letter-spacing:0.15em;margin-top:0.2rem;font-weight:400}
+nav.side-nav{flex:1;padding:1rem 0;overflow-y:auto}
+.side-nav a{display:flex;align-items:center;gap:0.7rem;padding:0.75rem 1.5rem;color:var(--muted);text-decoration:none;font-size:0.82rem;letter-spacing:0.05em;transition:all 0.2s;border-left:2px solid transparent}
+.side-nav a:hover,.side-nav a.active{color:var(--cyan);background:var(--cyan-dim);border-left-color:var(--cyan)}
+.side-nav .icon{font-size:1rem;width:20px;text-align:center}
+.sidebar-foot{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:0.5rem}
+.side-view-btn{color:var(--cyan2);text-decoration:none;font-size:0.75rem;letter-spacing:0.08em;font-family:'Orbitron',monospace;transition:opacity 0.2s}
+.side-view-btn:hover{opacity:0.7}
+.side-logout{color:var(--danger);font-size:0.75rem;letter-spacing:0.08em;font-family:'Orbitron',monospace;text-decoration:none;transition:opacity 0.2s}
+.side-logout:hover{opacity:0.7}
+/* MAIN */
+.main{margin-left:220px;padding:2rem 2.5rem;min-height:100vh}
+.page-title{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;color:var(--cyan);margin-bottom:0.3rem;letter-spacing:0.05em}
+.page-sub{color:var(--muted);font-size:0.82rem;margin-bottom:2.5rem}
+/* CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2.5rem}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem 1.5rem}
+.stat-box-n{font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:900;color:var(--cyan);text-shadow:var(--glow)}
+.stat-box-l{font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:0.3rem}
+/* SECTIONS */
+.cms-section{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:2rem;overflow:hidden}
+.cms-section-head{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cms-section-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;color:var(--cyan);letter-spacing:0.1em}
+.cms-body{padding:1.5rem}
+/* FORMS */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:0.35rem}
+.form-group label{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--cyan);font-family:'Orbitron',monospace}
+.form-group input,.form-group textarea,.form-group select{background:rgba(0,212,255,0.04);border:1px solid var(--border);color:var(--text);padding:0.65rem 0.9rem;border-radius:4px;font-family:'Exo 2',sans-serif;font-size:0.88rem;outline:none;transition:all 0.2s;width:100%}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--cyan);background:rgba(0,212,255,0.07)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group select option{background:#040c14}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.6rem 1.2rem;border:none;border-radius:4px;font-family:'Orbitron',monospace;font-size:0.68rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;text-decoration:none}
+.btn-cyan{background:var(--cyan);color:var(--bg);font-weight:700}
+.btn-cyan:hover{box-shadow:var(--glow);transform:translateY(-1px)}
+.btn-outline{background:transparent;color:var(--cyan);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+.btn-danger{background:rgba(255,71,87,0.15);color:var(--danger);border:1px solid rgba(255,71,87,0.3)}
+.btn-danger:hover{background:rgba(255,71,87,0.25)}
+.btn-sm{padding:0.4rem 0.8rem;font-size:0.62rem}
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:0.83rem}
+th{font-family:'Orbitron',monospace;font-size:0.62rem;letter-spacing:0.1em;color:var(--cyan);padding:0.7rem 1rem;text-align:left;border-bottom:1px solid var(--border);font-weight:400}
+td{padding:0.75rem 1rem;border-bottom:1px solid rgba(0,212,255,0.06);color:var(--muted);vertical-align:middle}
+tr:hover td{background:var(--cyan-dim)}
+td strong{color:var(--text)}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#040c14;border:1px solid var(--border);border-radius:8px;padding:2rem;width:600px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-title{font-family:'Orbitron',monospace;font-size:0.9rem;color:var(--cyan);margin-bottom:1.5rem;letter-spacing:0.1em}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;transition:color 0.2s}
+.modal-close:hover{color:var(--cyan)}
+/* RANGE */
+input[type=range]{-webkit-appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--cyan);border-radius:50%;cursor:pointer;box-shadow:var(--glow)}
+/* PHOTO PREVIEW */
+.photo-preview{width:80px;height:80px;border-radius:4px;object-fit:cover;border:1px solid var(--border);margin-top:0.5rem}
+/* BADGE */
+.badge{font-size:0.65rem;padding:0.2rem 0.5rem;border-radius:2px;font-family:'Orbitron',monospace;letter-spacing:0.05em}
+.badge-done{background:rgba(0,255,204,0.1);color:var(--cyan2);border:1px solid rgba(0,255,204,0.3)}
+.badge-wip{background:rgba(245,158,11,0.1);color:#f59e0b;border:1px solid rgba(245,158,11,0.3)}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">GGN <small>ADMIN CMS</small></div>
+  <nav class="side-nav">
+    <a href="#profile" class="active"><span class="icon">👤</span>Profile</a>
+    <a href="#projects"><span class="icon">📁</span>Projects</a>
+    <a href="#skills"><span class="icon">⚡</span>Skills</a>
+    <a href="#certs"><span class="icon">🏅</span>Certifications</a>
+    <a href="#education"><span class="icon">🎓</span>Education</a>
+    <a href="#password"><span class="icon">🔑</span>Password</a>
+  </nav>
+  <div class="sidebar-foot">
+    <a href="/" target="_blank" class="side-view-btn">↗ View Portfolio</a>
+    <a href="/admin/logout" class="side-logout">⏻ Logout</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">Admin Dashboard</div>
+  <div class="page-sub">Manage all portfolio content from here. Changes reflect instantly on the public site.</div>
+
+  <!-- STATS -->
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-box-n">{{ projects|length }}</div><div class="stat-box-l">Projects</div></div>
+    <div class="stat-box"><div class="stat-box-n">{{ skills|length }}</div><div class="stat-box-l">Skills</div></div>
+    <div class="stat-box"><div class="stat-box-n">{{ certs|length }}</div><div class="stat-box-l">Certifications</div></div>
+    <div class="stat-box"><div class="stat-box-n">{{ education|length }}</div><div class="stat-box-l">Education</div></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="cms-section" id="profile">
+    <div class="cms-section-head">
+      <div class="cms-section-title">👤 Profile</div>
+    </div>
+    <div class="cms-body">
+      <form method="POST" action="/admin/profile" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input name="name" value="{{ profile.name }}"/></div>
+          <div class="form-group"><label>Headline</label><input name="headline" value="{{ profile.headline }}"/></div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group"><label>Bio</label><textarea name="bio">{{ profile.bio }}</textarea></div>
+        </div>
+        <div class="form-row full">
+          <div class="form-group"><label>Tagline (shown as code comment)</label><input name="tagline" value="{{ profile.tagline }}"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Location</label><input name="location" value="{{ profile.location }}"/></div>
+          <div class="form-group"><label>Domain</label><input name="domain" value="{{ profile.domain }}"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email</label><input name="email" value="{{ profile.email }}"/></div>
+          <div class="form-group"><label>Phone</label><input name="phone" value="{{ profile.phone }}"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>LinkedIn URL</label><input name="linkedin" value="{{ profile.linkedin }}"/></div>
+          <div class="form-group"><label>GitHub URL</label><input name="github" value="{{ profile.github }}"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Kaggle URL</label><input name="kaggle" value="{{ profile.kaggle }}"/></div>
+          <div class="form-group"><label>Resume Link (optional)</label><input name="resume_link" value="{{ profile.resume_link or '' }}"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Years Exp (shown as stat)</label><input name="years_exp" value="{{ profile.years_exp }}"/></div>
+          <div class="form-group"><label>Projects Count (stat)</label><input name="projects_count" value="{{ profile.projects_count }}"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Certs Count (stat)</label><input name="certs_count" value="{{ profile.certs_count }}"/></div>
+          <div class="form-group"><label>Profile Photo</label><input type="file" name="photo" accept="image/*"/>
+            {% if profile.photo %}<img src="{{ profile.photo }}" class="photo-preview"/>{% endif %}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-cyan">💾 Save Profile</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="cms-section" id="projects">
+    <div class="cms-section-head">
+      <div class="cms-section-title">📁 Projects</div>
+      <button class="btn btn-cyan btn-sm" onclick="openModal('modal-add-project')">+ Add Project</button>
+    </div>
+    <div class="cms-body">
+      <table>
+        <tr><th>Emoji</th><th>Title</th><th>Tools</th><th>Status</th><th>Actions</th></tr>
+        {% for p in projects %}
+        <tr>
+          <td>{{ p.emoji }}</td>
+          <td><strong>{{ p.title }}</strong></td>
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.tools }}</td>
+          <td><span class="badge {{ 'badge-done' if p.status == 'Completed' else 'badge-wip' }}">{{ p.status }}</span></td>
+          <td style="display:flex;gap:0.5rem">
+            <button class="btn btn-outline btn-sm" onclick="openEditProject({{ p.id }},'{{ p.title|e }}','{{ p.description|e }}','{{ p.details|e }}','{{ p.tools|e }}','{{ p.github_link|e }}','{{ p.kaggle_link|e }}','{{ p.demo_link|e }}','{{ p.status }}','{{ p.emoji }}')">Edit</button>
+            <a href="/admin/project/delete/{{ p.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this project?')">Del</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div class="cms-section" id="skills">
+    <div class="cms-section-head">
+      <div class="cms-section-title">⚡ Skills</div>
+      <button class="btn btn-cyan btn-sm" onclick="openModal('modal-add-skill')">+ Add Skill</button>
+    </div>
+    <div class="cms-body">
+      <table>
+        <tr><th>Category</th><th>Skill</th><th>Level</th><th>Actions</th></tr>
+        {% for s in skills %}
+        <tr>
+          <td>{{ s.category }}</td>
+          <td><strong>{{ s.name }}</strong></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div style="flex:1;height:4px;background:rgba(0,212,255,0.1);border-radius:2px">
+                <div style="width:{{ s.level }}%;height:100%;background:var(--cyan);border-radius:2px"></div>
+              </div>
+              <span style="font-size:0.75rem;color:var(--cyan);width:30px">{{ s.level }}%</span>
+            </div>
+          </td>
+          <td><a href="/admin/skill/delete/{{ s.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete?')">Del</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- CERTS -->
+  <div class="cms-section" id="certs">
+    <div class="cms-section-head">
+      <div class="cms-section-title">🏅 Certifications</div>
+      <button class="btn btn-cyan btn-sm" onclick="openModal('modal-add-cert')">+ Add Cert</button>
+    </div>
+    <div class="cms-body">
+      <table>
+        <tr><th>Name</th><th>Issuer</th><th>Year</th><th>Actions</th></tr>
+        {% for c in certs %}
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td>{{ c.issuer }}</td>
+          <td>{{ c.year }}</td>
+          <td><a href="/admin/cert/delete/{{ c.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete?')">Del</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- EDUCATION -->
+  <div class="cms-section" id="education">
+    <div class="cms-section-head">
+      <div class="cms-section-title">🎓 Education</div>
+      <button class="btn btn-cyan btn-sm" onclick="openModal('modal-add-edu')">+ Add</button>
+    </div>
+    <div class="cms-body">
+      <table>
+        <tr><th>Degree</th><th>Institution</th><th>Year</th><th>Actions</th></tr>
+        {% for e in education %}
+        <tr>
+          <td><strong>{{ e.degree }}</strong></td>
+          <td>{{ e.institution }}</td>
+          <td>{{ e.year }}</td>
+          <td><a href="/admin/edu/delete/{{ e.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Delete?')">Del</a></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <!-- PASSWORD -->
+  <div class="cms-section" id="password">
+    <div class="cms-section-head"><div class="cms-section-title">🔑 Change Password</div></div>
+    <div class="cms-body">
+      <form method="POST" action="/admin/password" style="max-width:400px">
+        <div class="form-group" style="margin-bottom:1rem"><label>Current Password</label><input type="password" name="current" required/></div>
+        <div class="form-group" style="margin-bottom:1rem"><label>New Password</label><input type="password" name="new" required/></div>
+        <button type="submit" class="btn btn-cyan">Update Password</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<!-- Add Project -->
+<div class="modal-bg" id="modal-add-project">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-add-project')">✕</button>
+    <div class="modal-title">+ Add New Project</div>
+    <form method="POST" action="/admin/project/add">
+      <div class="form-row"><div class="form-group"><label>Title</label><input name="title" required/></div><div class="form-group"><label>Emoji</label><input name="emoji" value="📊"/></div></div>
+      <div class="form-row full"><div class="form-group"><label>Short Description</label><textarea name="description" required></textarea></div></div>
+      <div class="form-row full"><div class="form-group"><label>Details / Key Findings</label><textarea name="details"></textarea></div></div>
+      <div class="form-row full"><div class="form-group"><label>Tools (comma separated)</label><input name="tools" required/></div></div>
+      <div class="form-row"><div class="form-group"><label>GitHub URL</label><input name="github_link"/></div><div class="form-group"><label>Kaggle URL</label><input name="kaggle_link"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Demo URL</label><input name="demo_link"/></div><div class="form-group"><label>Status</label><select name="status"><option>In Progress</option><option selected>Completed</option><option>Upcoming</option></select></div></div>
+      <button type="submit" class="btn btn-cyan" style="margin-top:1rem">Add Project</button>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Project -->
+<div class="modal-bg" id="modal-edit-project">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit-project')">✕</button>
+    <div class="modal-title">✏ Edit Project</div>
+    <form method="POST" id="edit-project-form">
+      <div class="form-row"><div class="form-group"><label>Title</label><input name="title" id="ep-title"/></div><div class="form-group"><label>Emoji</label><input name="emoji" id="ep-emoji"/></div></div>
+      <div class="form-row full"><div class="form-group"><label>Short Description</label><textarea name="description" id="ep-desc"></textarea></div></div>
+      <div class="form-row full"><div class="form-group"><label>Details / Key Findings</label><textarea name="details" id="ep-details"></textarea></div></div>
+      <div class="form-row full"><div class="form-group"><label>Tools (comma separated)</label><input name="tools" id="ep-tools"/></div></div>
+      <div class="form-row"><div class="form-group"><label>GitHub URL</label><input name="github_link" id="ep-github"/></div><div class="form-group"><label>Kaggle URL</label><input name="kaggle_link" id="ep-kaggle"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Demo URL</label><input name="demo_link" id="ep-demo"/></div><div class="form-group"><label>Status</label><select name="status" id="ep-status"><option>In Progress</option><option>Completed</option><option>Upcoming</option></select></div></div>
+      <button type="submit" class="btn btn-cyan" style="margin-top:1rem">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add Skill -->
+<div class="modal-bg" id="modal-add-skill">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-add-skill')">✕</button>
+    <div class="modal-title">+ Add Skill</div>
+    <form method="POST" action="/admin/skill/add">
+      <div class="form-row"><div class="form-group"><label>Category</label><input name="category" placeholder="e.g. Languages, Tools" required/></div><div class="form-group"><label>Skill Name</label><input name="name" required/></div></div>
+      <div class="form-group" style="margin-bottom:1rem"><label>Level: <span id="skill-level-val">70</span>%</label><input type="range" name="level" min="10" max="100" value="70" oninput="document.getElementById('skill-level-val').textContent=this.value"/></div>
+      <div class="form-group" style="margin-bottom:1rem"><label>Badge Color</label><input name="badge_color" value="#00d4ff"/></div>
+      <button type="submit" class="btn btn-cyan">Add Skill</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add Cert -->
+<div class="modal-bg" id="modal-add-cert">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-add-cert')">✕</button>
+    <div class="modal-title">+ Add Certification</div>
+    <form method="POST" action="/admin/cert/add">
+      <div class="form-row full"><div class="form-group"><label>Certificate Name</label><input name="name" required/></div></div>
+      <div class="form-row"><div class="form-group"><label>Issuer</label><input name="issuer" required/></div><div class="form-group"><label>Year</label><input name="year" placeholder="Jun 2025"/></div></div>
+      <div class="form-row"><div class="form-group"><label>Credential ID (optional)</label><input name="credential_id"/></div><div class="form-group"><label>Verify Link (optional)</label><input name="link"/></div></div>
+      <button type="submit" class="btn btn-cyan" style="margin-top:1rem">Add Cert</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add Education -->
+<div class="modal-bg" id="modal-add-edu">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-add-edu')">✕</button>
+    <div class="modal-title">+ Add Education</div>
+    <form method="POST" action="/admin/edu/add">
+      <div class="form-row full"><div class="form-group"><label>Degree / Course</label><input name="degree" required/></div></div>
+      <div class="form-row"><div class="form-group"><label>Institution</label><input name="institution" required/></div><div class="form-group"><label>Year</label><input name="year" placeholder="2021 – 2024"/></div></div>
+      <div class="form-row full"><div class="form-group"><label>Description</label><textarea name="description"></textarea></div></div>
+      <button type="submit" class="btn btn-cyan" style="margin-top:1rem">Add Education</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function openModal(id){ document.getElementById(id).classList.add('open') }
+function closeModal(id){ document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open') }));
+
+function openEditProject(id,title,desc,details,tools,github,kaggle,demo,status,emoji){
+  document.getElementById('ep-title').value = title;
+  document.getElementById('ep-desc').value = desc;
+  document.getElementById('ep-details').value = details;
+  document.getElementById('ep-tools').value = tools;
+  document.getElementById('ep-github').value = github;
+  document.getElementById('ep-kaggle').value = kaggle;
+  document.getElementById('ep-demo').value = demo;
+  document.getElementById('ep-emoji').value = emoji;
+  document.getElementById('ep-status').value = status;
+  document.getElementById('edit-project-form').action = '/admin/project/edit/' + id;
+  openModal('modal-edit-project');
+}
+// Sidebar highlight on scroll
+const sections = document.querySelectorAll('.cms-section');
+const links = document.querySelectorAll('.side-nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 200) current = s.id; });
+  links.forEach(l => { l.classList.remove('active'); if(l.getAttribute('href')==='#'+current) l.classList.add('active'); });
+});
+</script>
+</body>
+</html>

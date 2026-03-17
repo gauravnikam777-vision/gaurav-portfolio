@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#020408;--cyan:#00d4ff;--cyan-dim:rgba(0,212,255,0.1);--border:rgba(0,212,255,0.2);--text:#e0f0ff;--muted:#5a7a8a;--glow:0 0 20px rgba(0,212,255,0.4)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;background-image:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,0.04) 0%,transparent 70%)}
+.login-box{width:380px;background:rgba(4,12,20,0.95);border:1px solid var(--border);border-radius:8px;padding:3rem;box-shadow:0 0 60px rgba(0,212,255,0.08)}
+.login-logo{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;color:var(--cyan);text-align:center;text-shadow:var(--glow);letter-spacing:0.1em;margin-bottom:0.4rem}
+.login-sub{text-align:center;font-size:0.75rem;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2.5rem;font-family:'Orbitron',monospace}
+.form-group{margin-bottom:1.4rem}
+label{display:block;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--cyan);margin-bottom:0.5rem;font-family:'Orbitron',monospace}
+input{width:100%;background:rgba(0,212,255,0.05);border:1px solid var(--border);color:var(--text);padding:0.85rem 1rem;border-radius:4px;font-family:'Exo 2',sans-serif;font-size:0.95rem;outline:none;transition:all 0.2s}
+input:focus{border-color:var(--cyan);box-shadow:var(--glow);background:rgba(0,212,255,0.08)}
+.btn-login{width:100%;background:var(--cyan);color:#020408;border:none;padding:0.9rem;border-radius:4px;font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;margin-top:0.5rem}
+.btn-login:hover{box-shadow:var(--glow),0 0 40px rgba(0,212,255,0.3);transform:translateY(-2px)}
+.error{background:rgba(255,50,50,0.1);border:1px solid rgba(255,80,80,0.3);color:#ff6b6b;padding:0.7rem 1rem;border-radius:4px;font-size:0.82rem;margin-bottom:1.2rem;text-align:center}
+.back{display:block;text-align:center;margin-top:1.5rem;font-size:0.75rem;color:var(--muted);text-decoration:none;letter-spacing:0.08em;font-family:'Orbitron',monospace;transition:color 0.2s}
+.back:hover{color:var(--cyan)}
+</style>
+</head>
+<body>
+<div class="login-box">
+  <div class="login-logo">GGN</div>
+  <div class="login-sub">Admin Access</div>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" name="username" required autocomplete="off"/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" required/>
+    </div>
+    <button type="submit" class="btn-login">ACCESS DASHBOARD →</button>
+  </form>
+  <a href="/" class="back">← Back to Portfolio</a>
+</div>
+</body>
+</html>
