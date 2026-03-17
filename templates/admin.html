@@ -262,6 +262,42 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
       </form>
     </div>
   </div>
+
+  <!-- FAVICON UPLOAD -->
+  <div class="cms-section" id="settings">
+    <div class="cms-section-head"><div class="cms-section-title">🖼️ Website Icon (Favicon)</div></div>
+    <div class="cms-body">
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.2rem">
+        Upload your photo or any image — it will appear as the browser tab icon. 
+        Recommended: square image (PNG/JPG).
+      </p>
+      <form method="POST" action="/admin/favicon" enctype="multipart/form-data" style="max-width:400px">
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Upload Your Photo / Icon</label>
+          <input type="file" name="favicon" accept="image/*" required
+            style="background:rgba(10,191,188,0.05);border:1px dashed rgba(10,191,188,0.3);
+            padding:1rem;border-radius:8px;width:100%;color:var(--white);cursor:pointer"/>
+        </div>
+        <p style="color:var(--muted);font-size:0.75rem;margin-bottom:1rem">
+          ✅ Supports: JPG, PNG, GIF, WebP &nbsp;·&nbsp; Any size (will auto-resize in browser tab)
+        </p>
+        <button type="submit" class="btn btn-cyan">Upload Icon</button>
+      </form>
+
+      <div style="margin-top:1.5rem;padding:1rem;background:rgba(10,191,188,0.05);
+        border:1px solid rgba(10,191,188,0.15);border-radius:8px;max-width:400px">
+        <p style="color:var(--cyan);font-size:0.78rem;font-weight:600;margin-bottom:0.5rem">
+          📌 After uploading:
+        </p>
+        <p style="color:var(--muted);font-size:0.78rem;line-height:1.7">
+          1. Your image will instantly become the browser tab icon<br>
+          2. Hard refresh the page (Ctrl+Shift+R) to see it<br>
+          3. Push changes to GitHub → Vercel will redeploy automatically
+        </p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODALS -->
