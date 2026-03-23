@@ -4,10 +4,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
 
+# ── NEW: GitHub sync ──────────────────────────────────────────────
+from github_sync import fetch_github_profile, merge_projects, invalidate_cache
+# ─────────────────────────────────────────────────────────────────
+
 app = Flask(__name__)
 app.secret_key = 'gaurav_portfolio_secret_2026'
 
-# /tmp is the only writable directory on Vercel serverless
 import tempfile
 DB_PATH = os.path.join(tempfile.gettempdir(), 'portfolio.db')
 UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'uploads')
@@ -54,11 +57,9 @@ def init_db():
     )''')
     c.execute('''CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)''')
 
-    # Seed admin
     if not c.execute('SELECT * FROM admin').fetchone():
         c.execute('INSERT INTO admin VALUES (1,?,?)', ('gaurav', generate_password_hash('admin123')))
 
-    # Seed profile
     if not c.execute('SELECT * FROM profile').fetchone():
         c.execute('''INSERT INTO profile VALUES (1,
             "Gaurav Govind Nikam",
@@ -76,17 +77,15 @@ def init_db():
             "1+", "5+", "14+", "E-commerce"
         )''')
 
-    # Seed projects
     if not c.execute('SELECT * FROM projects').fetchone():
         projects = [
             ("SuperStore Power BI Sales Forecast", "Power BI dashboard with 20-day sales forecasting using the SuperStore dataset", "Built interactive dashboard with sales trends, regional breakdown, category performance. Implemented 20-day forecast using Power BI built-in forecasting.", "Power BI, DAX", "https://github.com/gauravnikam777-vision/SuperStore-PowerBI-Sales-Forecast", "", "", "Completed", "⚡", 1),
-            ("Diabetes Prediction App", "Streamlit web app for diabetes prediction using XGBoost", "End-to-end ML project: data cleaning → model training → deployed web app accessible to anyone.", "Python, XGBoost, Streamlit, pandas", "https://github.com/gauravnikam777-vision/diabetes-prediction-app", "", "", "Completed", "🩺", 2),
-            ("Customer Churn Prediction", "Predicting customer churn using classification models", "Analyzed customer behavior data, engineered features, trained and evaluated multiple ML models to identify at-risk customers.", "Python, pandas, scikit-learn", "https://github.com/gauravnikam777-vision/customer-churn-prediction", "", "", "Completed", "📉", 3),
+            ("Diabetes Prediction App", "Streamlit web app for diabetes prediction using XGBoost", "End-to-end ML project: data cleaning → model training → deployed web app accessible to anyone.", "Python, XGBoost, Streamlit, pandas", "https://github.com/gauravnikam777-vision/diabetes-prediction-app", "", "https://diabetes-prediction-app-pro.streamlit.app/", "Completed", "🩺", 2),
+            ("Customer Churn Prediction", "Predicting customer churn using classification models", "Analyzed customer behavior data, engineered features, trained and evaluated multiple ML models to identify at-risk customers.", "Python, pandas, scikit-learn", "https://github.com/gauravnikam777-vision/customer-churn-prediction", "", "https://customer-churn-prediction-7dmchid9v9vkkyigyn3ivc.streamlit.app/", "Completed", "📉", 3),
             ("Trader Behavior Insights", "Analysis of trader behavior patterns from financial market data", "Deep EDA on trader activity — identified patterns, peak trading windows, and behavioral clusters.", "Python, pandas, Matplotlib", "https://github.com/gauravnikam777-vision/Trader-Behavior-Insights", "https://www.kaggle.com/gnikam9211", "", "Completed", "📊", 4),
         ]
         c.executemany('INSERT INTO projects (title,description,details,tools,github_link,kaggle_link,demo_link,status,emoji,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)', projects)
 
-    # Seed skills
     if not c.execute('SELECT * FROM skills').fetchone():
         skills = [
             ("Languages", "Python", 75, "#00d4ff", 1),
@@ -101,7 +100,6 @@ def init_db():
         ]
         c.executemany('INSERT INTO skills (category,name,level,badge_color,sort_order) VALUES (?,?,?,?,?)', skills)
 
-    # Seed certs
     if not c.execute('SELECT * FROM certifications').fetchone():
         certs = [
             ("Artificial Intelligence: Concepts & Techniques", "NPTEL", "Oct 2025", "NPTEL25CS159S1166901114", "", 1),
@@ -121,7 +119,6 @@ def init_db():
         ]
         c.executemany('INSERT INTO certifications (name,issuer,year,credential_id,link,sort_order) VALUES (?,?,?,?,?,?)', certs)
 
-    # Seed education
     if not c.execute('SELECT * FROM education').fetchone():
         edu = [
             ("MCA — Master of Computer Applications", "Pursuing · Pune, Maharashtra", "2024 – Present", "Specializing in data systems, analytics, and software engineering.", 1),
@@ -140,25 +137,81 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ── PUBLIC ──────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════
+# ── PUBLIC ROUTE — GitHub sync happens here ─────────────────────
+# ═══════════════════════════════════════════════════════════════════
 @app.route('/')
 def index():
     db = get_db()
-    profile = db.execute('SELECT * FROM profile').fetchone()
-    projects = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
-    skills = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
-    certs = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
-    education = db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
+    profile_row  = db.execute('SELECT * FROM profile').fetchone()
+    db_projects  = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
+    skills       = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
+    certs        = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
+    education    = db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
     db.close()
+
+    # ── Merge GitHub repos into projects list ──────────────────────
+    projects = merge_projects(db_projects)
+    # projects now includes: all DB projects (enriched) + any NEW GitHub repos
+
+    # ── Overlay GitHub live avatar onto profile ────────────────────
+    gh = fetch_github_profile()
+    profile = dict(profile_row)
+    # Only use GitHub avatar if no custom photo set in admin
+    if not profile.get("photo") and gh.get("avatar_url"):
+        profile["photo"] = gh["avatar_url"]
+    profile["gh_followers"] = gh.get("followers", 0)
+    profile["gh_repos"]     = gh.get("repo_count", 0)
+    # ──────────────────────────────────────────────────────────────
 
     skill_cats = {}
     for s in skills:
         skill_cats.setdefault(s['category'], []).append(s)
 
-    return render_template('index.html', profile=profile, projects=projects,
-                           skill_cats=skill_cats, certs=certs, education=education)
+    return render_template('index.html',
+        profile=profile,
+        projects=projects,
+        skill_cats=skill_cats,
+        certs=certs,
+        education=education
+    )
 
-# ── ADMIN LOGIN ──────────────────────────────────────────
+
+# ── WEBHOOK — GitHub calls this on every push (instant refresh) ──
+@app.route('/webhook/github', methods=['POST'])
+def github_webhook():
+    """
+    Add this as a webhook in your GitHub repos:
+    Settings → Webhooks → Add webhook
+    Payload URL : https://gaurav-nikam-777.vercel.app/webhook/github
+    Content type: application/json
+    Events      : Just the push event
+    """
+    invalidate_cache()
+    return jsonify({"status": "ok", "message": "Cache cleared"}), 200
+
+
+# ── MANUAL REFRESH — force re-fetch without waiting 10 min ───────
+@app.route('/refresh')
+def manual_refresh():
+    invalidate_cache()
+    return jsonify({"status": "refreshed", "message": "Visit portfolio to see updated data"})
+
+
+# ── DEBUG — see exact data being served ──────────────────────────
+@app.route('/api/projects')
+def api_projects():
+    db = get_db()
+    db_projects = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
+    db.close()
+    return jsonify(merge_projects(db_projects))
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ── ALL ADMIN ROUTES — UNCHANGED ────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+
 @app.route('/admin/login', methods=['GET','POST'])
 def admin_login():
     error = None
@@ -177,21 +230,19 @@ def admin_logout():
     session.pop('admin', None)
     return redirect(url_for('index'))
 
-# ── ADMIN DASHBOARD ──────────────────────────────────────
 @app.route('/admin')
 @login_required
 def admin_dashboard():
     db = get_db()
-    profile = db.execute('SELECT * FROM profile').fetchone()
+    profile  = db.execute('SELECT * FROM profile').fetchone()
     projects = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
-    skills = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
-    certs = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
-    education = db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
+    skills   = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
+    certs    = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
+    education= db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
     db.close()
     return render_template('admin.html', profile=profile, projects=projects,
                            skills=skills, certs=certs, education=education)
 
-# ── ADMIN: PROFILE ───────────────────────────────────────
 @app.route('/admin/profile', methods=['POST'])
 @login_required
 def update_profile():
@@ -199,9 +250,6 @@ def update_profile():
     f = request.form
     db = get_db()
     photo = db.execute('SELECT photo FROM profile').fetchone()['photo']
-
-    # Store photo as base64 data URL directly in DB
-    # This works on Vercel because it doesn't rely on filesystem
     if 'photo' in request.files:
         file = request.files['photo']
         if file and file.filename and allowed_file(file.filename):
@@ -210,7 +258,6 @@ def update_profile():
             file_data = file.read()
             b64 = base64.b64encode(file_data).decode('utf-8')
             photo = f'data:{mime};base64,{b64}'
-
     db.execute('''UPDATE profile SET name=?,headline=?,bio=?,tagline=?,location=?,email=?,phone=?,
                   linkedin=?,github=?,kaggle=?,resume_link=?,photo=?,
                   years_exp=?,projects_count=?,certs_count=?,domain=? WHERE id=1''',
@@ -220,7 +267,6 @@ def update_profile():
     db.commit(); db.close()
     return redirect(url_for('admin_dashboard') + '#profile')
 
-# ── ADMIN: PROJECTS ──────────────────────────────────────
 @app.route('/admin/project/add', methods=['POST'])
 @login_required
 def add_project():
@@ -250,7 +296,6 @@ def delete_project(pid):
     db.commit(); db.close()
     return redirect(url_for('admin_dashboard') + '#projects')
 
-# ── ADMIN: SKILLS ────────────────────────────────────────
 @app.route('/admin/skill/add', methods=['POST'])
 @login_required
 def add_skill():
@@ -270,7 +315,6 @@ def delete_skill(sid):
     db.commit(); db.close()
     return redirect(url_for('admin_dashboard') + '#skills')
 
-# ── ADMIN: CERTS ─────────────────────────────────────────
 @app.route('/admin/cert/add', methods=['POST'])
 @login_required
 def add_cert():
@@ -290,7 +334,6 @@ def delete_cert(cid):
     db.commit(); db.close()
     return redirect(url_for('admin_dashboard') + '#certs')
 
-# ── ADMIN: EDUCATION ─────────────────────────────────────
 @app.route('/admin/edu/add', methods=['POST'])
 @login_required
 def add_edu():
@@ -310,7 +353,6 @@ def delete_edu(eid):
     db.commit(); db.close()
     return redirect(url_for('admin_dashboard') + '#education')
 
-# ── ADMIN: CHANGE PASSWORD ───────────────────────────────
 @app.route('/admin/password', methods=['POST'])
 @login_required
 def change_password():
@@ -323,7 +365,7 @@ def change_password():
     db.close()
     return redirect(url_for('admin_dashboard'))
 
-# This runs on every cold start in Vercel serverless
+
 try:
     init_db()
 except Exception as e:
