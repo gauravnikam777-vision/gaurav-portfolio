@@ -1,25 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-import sqlite3, os, json
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, jsonify, request
+import sqlite3, os
 from functools import wraps
 
-# ── NEW: GitHub sync ──────────────────────────────────────────────
 from github_sync import fetch_github_profile, merge_projects, invalidate_cache
-# ─────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
 app.secret_key = 'gaurav_portfolio_secret_2026'
 
 import tempfile
 DB_PATH = os.path.join(tempfile.gettempdir(), 'portfolio.db')
-UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-
-def allowed_file(f):
-    return '.' in f and f.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -30,7 +19,6 @@ def init_db():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute('''CREATE TABLE IF NOT EXISTS admin (id INTEGER PRIMARY KEY, username TEXT, password TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS profile (
         id INTEGER PRIMARY KEY,
         name TEXT, headline TEXT, bio TEXT, tagline TEXT,
@@ -52,13 +40,6 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS education (
         id INTEGER PRIMARY KEY, degree TEXT, institution TEXT, year TEXT, description TEXT, sort_order INTEGER
     )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS timeline (
-        id INTEGER PRIMARY KEY, year TEXT, title TEXT, description TEXT, sort_order INTEGER
-    )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)''')
-
-    if not c.execute('SELECT * FROM admin').fetchone():
-        c.execute('INSERT INTO admin VALUES (1,?,?)', ('gaurav', generate_password_hash('admin123')))
 
     if not c.execute('SELECT * FROM profile').fetchone():
         c.execute('''INSERT INTO profile VALUES (1,
@@ -79,9 +60,9 @@ def init_db():
 
     if not c.execute('SELECT * FROM projects').fetchone():
         projects = [
-            ("SuperStore Power BI Sales Forecast", "Power BI dashboard with 20-day sales forecasting using the SuperStore dataset", "Built interactive dashboard with sales trends, regional breakdown, category performance. Implemented 20-day forecast using Power BI built-in forecasting.", "Power BI, DAX", "https://github.com/gauravnikam777-vision/SuperStore-PowerBI-Sales-Forecast", "", "", "Completed", "⚡", 1),
-            ("Diabetes Prediction App", "Streamlit web app for diabetes prediction using XGBoost", "End-to-end ML project: data cleaning → model training → deployed web app accessible to anyone.", "Python, XGBoost, Streamlit, pandas", "https://github.com/gauravnikam777-vision/diabetes-prediction-app", "", "https://diabetes-prediction-app-pro.streamlit.app/", "Completed", "🩺", 2),
-            ("Customer Churn Prediction", "Predicting customer churn using classification models", "Analyzed customer behavior data, engineered features, trained and evaluated multiple ML models to identify at-risk customers.", "Python, pandas, scikit-learn", "https://github.com/gauravnikam777-vision/customer-churn-prediction", "", "https://customer-churn-prediction-7dmchid9v9vkkyigyn3ivc.streamlit.app/", "Completed", "📉", 3),
+            ("SuperStore Power BI Sales Forecast", "Power BI dashboard with 20-day sales forecasting using the SuperStore dataset", "Built interactive dashboard with sales trends, regional breakdown, category performance.", "Power BI, DAX", "https://github.com/gauravnikam777-vision/SuperStore-PowerBI-Sales-Forecast", "", "", "Completed", "⚡", 1),
+            ("Diabetes Prediction App", "Streamlit web app for diabetes prediction using XGBoost", "End-to-end ML project: data cleaning → model training → deployed web app.", "Python, XGBoost, Streamlit, pandas", "https://github.com/gauravnikam777-vision/diabetes-prediction-app", "", "https://diabetes-prediction-app-pro.streamlit.app/", "Completed", "🩺", 2),
+            ("Customer Churn Prediction", "Predicting customer churn using classification models", "Analyzed customer behavior data, engineered features, trained ML models to identify at-risk customers.", "Python, pandas, scikit-learn", "https://github.com/gauravnikam777-vision/customer-churn-prediction", "", "https://customer-churn-prediction-7dmchid9v9vkkyigyn3ivc.streamlit.app/", "Completed", "📉", 3),
             ("Trader Behavior Insights", "Analysis of trader behavior patterns from financial market data", "Deep EDA on trader activity — identified patterns, peak trading windows, and behavioral clusters.", "Python, pandas, Matplotlib", "https://github.com/gauravnikam777-vision/Trader-Behavior-Insights", "https://www.kaggle.com/gnikam9211", "", "Completed", "📊", 4),
         ]
         c.executemany('INSERT INTO projects (title,description,details,tools,github_link,kaggle_link,demo_link,status,emoji,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)', projects)
@@ -129,41 +110,27 @@ def init_db():
     conn.commit()
     conn.close()
 
-def login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'admin' not in session:
-            return redirect(url_for('admin_login'))
-        return f(*args, **kwargs)
-    return decorated
 
-
-# ═══════════════════════════════════════════════════════════════════
-# ── PUBLIC ROUTE — GitHub sync happens here ─────────────────────
-# ═══════════════════════════════════════════════════════════════════
+# ── PUBLIC PORTFOLIO ──────────────────────────────────────────────
 @app.route('/')
 def index():
     db = get_db()
-    profile_row  = db.execute('SELECT * FROM profile').fetchone()
-    db_projects  = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
-    skills       = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
-    certs        = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
-    education    = db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
+    profile_row = db.execute('SELECT * FROM profile').fetchone()
+    db_projects = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
+    skills      = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
+    certs       = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
+    education   = db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
     db.close()
 
-    # ── Merge GitHub repos into projects list ──────────────────────
+    # GitHub sync — merge repos + get live avatar
     projects = merge_projects(db_projects)
-    # projects now includes: all DB projects (enriched) + any NEW GitHub repos
+    gh       = fetch_github_profile()
 
-    # ── Overlay GitHub live avatar onto profile ────────────────────
-    gh = fetch_github_profile()
     profile = dict(profile_row)
-    # Only use GitHub avatar if no custom photo set in admin
     if not profile.get("photo") and gh.get("avatar_url"):
         profile["photo"] = gh["avatar_url"]
     profile["gh_followers"] = gh.get("followers", 0)
     profile["gh_repos"]     = gh.get("repo_count", 0)
-    # ──────────────────────────────────────────────────────────────
 
     skill_cats = {}
     for s in skills:
@@ -178,192 +145,27 @@ def index():
     )
 
 
-# ── WEBHOOK — GitHub calls this on every push (instant refresh) ──
+# ── GITHUB WEBHOOK — instant cache refresh on push ───────────────
 @app.route('/webhook/github', methods=['POST'])
 def github_webhook():
-    """
-    Add this as a webhook in your GitHub repos:
-    Settings → Webhooks → Add webhook
-    Payload URL : https://gaurav-nikam-777.vercel.app/webhook/github
-    Content type: application/json
-    Events      : Just the push event
-    """
     invalidate_cache()
-    return jsonify({"status": "ok", "message": "Cache cleared"}), 200
+    return jsonify({"status": "ok"}), 200
 
 
-# ── MANUAL REFRESH — force re-fetch without waiting 10 min ───────
+# ── MANUAL REFRESH ────────────────────────────────────────────────
 @app.route('/refresh')
 def manual_refresh():
     invalidate_cache()
-    return jsonify({"status": "refreshed", "message": "Visit portfolio to see updated data"})
+    return jsonify({"status": "refreshed"})
 
 
-# ── DEBUG — see exact data being served ──────────────────────────
+# ── DEBUG — see live data ─────────────────────────────────────────
 @app.route('/api/projects')
 def api_projects():
     db = get_db()
     db_projects = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
     db.close()
     return jsonify(merge_projects(db_projects))
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ── ALL ADMIN ROUTES — UNCHANGED ────────────────────────────────
-# ═══════════════════════════════════════════════════════════════════
-
-@app.route('/admin/login', methods=['GET','POST'])
-def admin_login():
-    error = None
-    if request.method == 'POST':
-        db = get_db()
-        admin = db.execute('SELECT * FROM admin WHERE username=?', (request.form['username'],)).fetchone()
-        db.close()
-        if admin and check_password_hash(admin['password'], request.form['password']):
-            session['admin'] = True
-            return redirect(url_for('admin_dashboard'))
-        error = 'Invalid credentials'
-    return render_template('admin_login.html', error=error)
-
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin', None)
-    return redirect(url_for('index'))
-
-@app.route('/admin')
-@login_required
-def admin_dashboard():
-    db = get_db()
-    profile  = db.execute('SELECT * FROM profile').fetchone()
-    projects = db.execute('SELECT * FROM projects ORDER BY sort_order').fetchall()
-    skills   = db.execute('SELECT * FROM skills ORDER BY sort_order').fetchall()
-    certs    = db.execute('SELECT * FROM certifications ORDER BY sort_order').fetchall()
-    education= db.execute('SELECT * FROM education ORDER BY sort_order').fetchall()
-    db.close()
-    return render_template('admin.html', profile=profile, projects=projects,
-                           skills=skills, certs=certs, education=education)
-
-@app.route('/admin/profile', methods=['POST'])
-@login_required
-def update_profile():
-    import base64
-    f = request.form
-    db = get_db()
-    photo = db.execute('SELECT photo FROM profile').fetchone()['photo']
-    if 'photo' in request.files:
-        file = request.files['photo']
-        if file and file.filename and allowed_file(file.filename):
-            ext = file.filename.rsplit('.', 1)[1].lower()
-            mime = 'image/jpeg' if ext in ('jpg','jpeg') else f'image/{ext}'
-            file_data = file.read()
-            b64 = base64.b64encode(file_data).decode('utf-8')
-            photo = f'data:{mime};base64,{b64}'
-    db.execute('''UPDATE profile SET name=?,headline=?,bio=?,tagline=?,location=?,email=?,phone=?,
-                  linkedin=?,github=?,kaggle=?,resume_link=?,photo=?,
-                  years_exp=?,projects_count=?,certs_count=?,domain=? WHERE id=1''',
-               (f['name'],f['headline'],f['bio'],f['tagline'],f['location'],f['email'],f['phone'],
-                f['linkedin'],f['github'],f['kaggle'],f.get('resume_link',''),photo,
-                f['years_exp'],f['projects_count'],f['certs_count'],f['domain']))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#profile')
-
-@app.route('/admin/project/add', methods=['POST'])
-@login_required
-def add_project():
-    f = request.form
-    db = get_db()
-    db.execute('INSERT INTO projects (title,description,details,tools,github_link,kaggle_link,demo_link,status,emoji,sort_order) VALUES (?,?,?,?,?,?,?,?,?,?)',
-               (f['title'],f['description'],f['details'],f['tools'],f.get('github_link',''),f.get('kaggle_link',''),f.get('demo_link',''),f['status'],f.get('emoji','📊'),
-                int(db.execute('SELECT COUNT(*) FROM projects').fetchone()[0])+1))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#projects')
-
-@app.route('/admin/project/edit/<int:pid>', methods=['POST'])
-@login_required
-def edit_project(pid):
-    f = request.form
-    db = get_db()
-    db.execute('UPDATE projects SET title=?,description=?,details=?,tools=?,github_link=?,kaggle_link=?,demo_link=?,status=?,emoji=? WHERE id=?',
-               (f['title'],f['description'],f['details'],f['tools'],f.get('github_link',''),f.get('kaggle_link',''),f.get('demo_link',''),f['status'],f.get('emoji','📊'),pid))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#projects')
-
-@app.route('/admin/project/delete/<int:pid>')
-@login_required
-def delete_project(pid):
-    db = get_db()
-    db.execute('DELETE FROM projects WHERE id=?', (pid,))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#projects')
-
-@app.route('/admin/skill/add', methods=['POST'])
-@login_required
-def add_skill():
-    f = request.form
-    db = get_db()
-    db.execute('INSERT INTO skills (category,name,level,badge_color,sort_order) VALUES (?,?,?,?,?)',
-               (f['category'],f['name'],int(f['level']),f.get('badge_color','#00d4ff'),
-                int(db.execute('SELECT COUNT(*) FROM skills').fetchone()[0])+1))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#skills')
-
-@app.route('/admin/skill/delete/<int:sid>')
-@login_required
-def delete_skill(sid):
-    db = get_db()
-    db.execute('DELETE FROM skills WHERE id=?', (sid,))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#skills')
-
-@app.route('/admin/cert/add', methods=['POST'])
-@login_required
-def add_cert():
-    f = request.form
-    db = get_db()
-    db.execute('INSERT INTO certifications (name,issuer,year,credential_id,link,sort_order) VALUES (?,?,?,?,?,?)',
-               (f['name'],f['issuer'],f['year'],f.get('credential_id',''),f.get('link',''),
-                int(db.execute('SELECT COUNT(*) FROM certifications').fetchone()[0])+1))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#certs')
-
-@app.route('/admin/cert/delete/<int:cid>')
-@login_required
-def delete_cert(cid):
-    db = get_db()
-    db.execute('DELETE FROM certifications WHERE id=?', (cid,))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#certs')
-
-@app.route('/admin/edu/add', methods=['POST'])
-@login_required
-def add_edu():
-    f = request.form
-    db = get_db()
-    db.execute('INSERT INTO education (degree,institution,year,description,sort_order) VALUES (?,?,?,?,?)',
-               (f['degree'],f['institution'],f['year'],f.get('description',''),
-                int(db.execute('SELECT COUNT(*) FROM education').fetchone()[0])+1))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#education')
-
-@app.route('/admin/edu/delete/<int:eid>')
-@login_required
-def delete_edu(eid):
-    db = get_db()
-    db.execute('DELETE FROM education WHERE id=?', (eid,))
-    db.commit(); db.close()
-    return redirect(url_for('admin_dashboard') + '#education')
-
-@app.route('/admin/password', methods=['POST'])
-@login_required
-def change_password():
-    f = request.form
-    db = get_db()
-    admin = db.execute('SELECT * FROM admin WHERE id=1').fetchone()
-    if check_password_hash(admin['password'], f['current']):
-        db.execute('UPDATE admin SET password=? WHERE id=1', (generate_password_hash(f['new']),))
-        db.commit()
-    db.close()
-    return redirect(url_for('admin_dashboard'))
 
 
 try:
