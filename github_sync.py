@@ -1,53 +1,24 @@
-"""
-github_sync.py
-==============
-100% automatic GitHub sync.
-
-What comes from WHERE:
-  ┌─────────────────────────────────────────────────────────┐
-  │  Profile (name, bio, avatar, location, followers)       │
-  │  → GitHub User API — auto, no config needed             │
-  │                                                         │
-  │  Projects (ALL repos)                                   │
-  │  → GitHub Repos API — new repo = auto shows on portfolio│
-  │  → Repo description  = project description             │
-  │  → Repo homepage     = live app URL                    │
-  │  → Repo topics       = project tags                    │
-  │  → Repo stars/forks  = shown automatically             │
-  │                                                         │
-  │  Skills, Education, Certifications                      │
-  │  → portfolio.json in your GitHub profile repo           │
-  │  → Set up ONCE, then edit on GitHub like any file       │
-  └─────────────────────────────────────────────────────────┘
-"""
-
 import os, time, requests
 
-# ─────────────────────────────────────────────────────────────────
-GITHUB_USERNAME  = "gauravnikam777-vision"
-PROFILE_REPO     = "gauravnikam777-vision"   # your profile repo (same name as username)
-CONFIG_FILE      = "portfolio.json"           # lives inside your profile repo
-GITHUB_TOKEN     = os.environ.get("GITHUB_TOKEN", "")
-CACHE_SECONDS    = 600   # 10 min — or instant via webhook
+GITHUB_USERNAME = "gauravnikam777-vision"
+GITHUB_TOKEN    = os.environ.get("GITHUB_TOKEN", "")
+CACHE_SECONDS   = 600
 
-# Repos to always hide from portfolio
-HIDDEN_REPOS = {GITHUB_USERNAME, "cip-project"}
+HIDDEN_REPOS = {"gauravnikam777-vision", "cip-project"}
 
-# ── EMOJI MAP: auto-assign emoji based on repo topics / language ──
 EMOJI_MAP = {
     "machine-learning": "🤖", "ml": "🤖",
-    "deep-learning": "🧠",    "neural-network": "🧠",
-    "data-analysis": "📊",    "eda": "📊",
-    "prediction": "📉",       "churn": "📉",
-    "diabetes": "🩺",         "healthcare": "🩺",
-    "power-bi": "⚡",          "dashboard": "⚡",
-    "trading": "📈",           "finance": "📈",
-    "ecommerce": "🛒",         "sql": "🗄️",
-    "streamlit": "🚀",         "fastapi": "⚙️",
+    "deep-learning": "🧠",
+    "data-analysis": "📊", "eda": "📊",
+    "prediction": "📉", "churn": "📉",
+    "diabetes": "🩺", "healthcare": "🩺",
+    "power-bi": "⚡", "dashboard": "⚡",
+    "trading": "📈", "finance": "📈",
+    "ecommerce": "🛒", "sql": "🗄️",
+    "streamlit": "🚀", "fastapi": "⚙️",
     "python": "🐍",
 }
 
-# ─────────────────────────────────────────────────────────────────
 _cache = {}
 
 def _headers():
@@ -62,173 +33,147 @@ def _get(url, params=None):
         r.raise_for_status()
         return r.json()
     except Exception as e:
-        print(f"[sync] ✗ {url}: {e}")
+        print(f"[github_sync] Error {url}: {e}")
         return None
 
-def _cached(key, fn, force=False):
-    entry = _cache.get(key)
-    if not force and entry and (time.time() - entry["ts"]) < CACHE_SECONDS:
-        return entry["data"]
-    data = fn()
-    if data is not None:
-        _cache[key] = {"data": data, "ts": time.time()}
-    elif entry:
-        return entry["data"]   # return stale rather than crash
-    return data
+def _fresh(key):
+    e = _cache.get(key)
+    return e and (time.time() - e["ts"]) < CACHE_SECONDS
 
-# ─── GITHUB PROFILE ──────────────────────────────────────────────
-def _fetch_profile():
+def _store(key, data):
+    _cache[key] = {"data": data, "ts": time.time()}
+
+def _cached(key):
+    return _cache.get(key, {}).get("data")
+
+
+def fetch_github_profile():
+    """Returns live GitHub data: avatar_url, followers, repo_count."""
+    if _fresh("profile"):
+        return _cached("profile")
+
     d = _get(f"https://api.github.com/users/{GITHUB_USERNAME}")
     if not d:
-        return {}
-    return {
-        "name":       d.get("name") or "Gaurav Govind Nikam",
+        return _cached("profile") or {}
+
+    data = {
         "avatar_url": d.get("avatar_url", ""),
-        "bio":        d.get("bio", ""),
-        "location":   d.get("location", "Pune, India"),
-        "blog":       d.get("blog", ""),
         "followers":  d.get("followers", 0),
-        "following":  d.get("following", 0),
         "repo_count": d.get("public_repos", 0),
         "github_url": d.get("html_url", ""),
-        "twitter":    d.get("twitter_username", ""),
+        "location":   d.get("location", ""),
+        "bio":        d.get("bio", ""),
     }
+    _store("profile", data)
+    return data
 
-# ─── PORTFOLIO CONFIG (skills, education, certs) ─────────────────
-def _fetch_config():
-    """
-    Fetch portfolio.json from your GitHub profile repo.
-    This is the ONLY file you edit — and you edit it on GitHub, not locally.
-    """
-    url = (f"https://raw.githubusercontent.com/"
-           f"{GITHUB_USERNAME}/{PROFILE_REPO}/main/{CONFIG_FILE}")
-    try:
-        r = requests.get(url, headers=_headers(), timeout=8)
-        r.raise_for_status()
-        return r.json()
-    except Exception as e:
-        print(f"[sync] portfolio.json not found yet: {e}")
-        return {}
 
-# ─── REPOS → PROJECTS ────────────────────────────────────────────
-def _fetch_repos():
+def merge_projects(db_projects):
     """
-    Fetch ALL public repos. Each repo becomes a project automatically.
-    - description  → project description
-    - homepage     → live app URL (set in repo About → Website)
-    - topics       → tech tags
-    - stars        → shown on card
-    - language     → primary language badge
+    Merges GitHub repos with DB projects.
+    - DB fields always win if set
+    - GitHub fills missing fields automatically
+    - New GitHub repos not in DB appear on portfolio automatically
     """
-    repos = _get(
-        f"https://api.github.com/users/{GITHUB_USERNAME}/repos",
-        params={"type": "public", "per_page": 100, "sort": "updated"}
-    )
-    if not repos:
-        return []
+    if _fresh("repos"):
+        gh_repos = _cached("repos")
+    else:
+        raw = _get(
+            f"https://api.github.com/users/{GITHUB_USERNAME}/repos",
+            params={"type": "public", "per_page": 100, "sort": "updated"}
+        )
+        gh_repos = []
+        if raw:
+            for repo in raw:
+                name = repo.get("name", "")
+                if name in HIDDEN_REPOS:
+                    continue
+                topics = repo.get("topics", [])
+                emoji = "💻"
+                for t in topics:
+                    if t.lower() in EMOJI_MAP:
+                        emoji = EMOJI_MAP[t.lower()]
+                        break
+                if emoji == "💻":
+                    lang = (repo.get("language") or "").lower()
+                    emoji = EMOJI_MAP.get(lang, "💻")
 
-    # Get config for ordering / overrides / hidden list
-    config = _cached("config", _fetch_config) or {}
-    overrides = config.get("project_overrides", {})
-    hidden    = set(config.get("hidden_repos", [])) | HIDDEN_REPOS
+                gh_repos.append({
+                    "gh_name":        name,
+                    "gh_title":       name.replace("-", " ").replace("_", " ").title(),
+                    "gh_description": repo.get("description") or "",
+                    "gh_live_url":    repo.get("homepage") or "",
+                    "gh_github_url":  repo.get("html_url", ""),
+                    "gh_stars":       repo.get("stargazers_count", 0),
+                    "gh_language":    repo.get("language") or "",
+                    "gh_topics":      topics,
+                    "gh_updated":     (repo.get("updated_at") or "")[:10],
+                    "gh_emoji":       emoji,
+                })
+        _store("repos", gh_repos)
 
-    projects = []
-    for i, repo in enumerate(repos):
-        name = repo.get("name", "")
-        if name in hidden:
+    gh_by_name = {r["gh_name"]: r for r in gh_repos}
+
+    db_by_slug = {}
+    for p in db_projects:
+        gh_url = p["github_link"] or ""
+        slug = gh_url.rstrip("/").split("/")[-1] if gh_url else p["title"]
+        db_by_slug[slug] = dict(p)
+
+    merged = []
+    gh_seen = set()
+
+    for slug, db_proj in db_by_slug.items():
+        gh = gh_by_name.get(slug)
+        gh_seen.add(slug)
+
+        merged.append({
+            "id":          db_proj["id"],
+            "title":       db_proj["title"],
+            "description": db_proj["description"] or (gh["gh_description"] if gh else ""),
+            "details":     db_proj["details"] or "",
+            "tools":       db_proj["tools"] or "",
+            "github_link": db_proj["github_link"] or (gh["gh_github_url"] if gh else ""),
+            "kaggle_link": db_proj["kaggle_link"] or "",
+            "demo_link":   db_proj["demo_link"] or (gh["gh_live_url"] if gh else ""),
+            "status":      db_proj["status"] or "Completed",
+            "emoji":       db_proj["emoji"] or (gh["gh_emoji"] if gh else "💻"),
+            "sort_order":  db_proj["sort_order"] or 99,
+            "stars":       gh["gh_stars"] if gh else 0,
+            "language":    gh["gh_language"] if gh else "",
+            "topics":      gh["gh_topics"] if gh else [],
+            "gh_updated":  gh["gh_updated"] if gh else "",
+            "is_from_db":  True,
+        })
+
+    next_order = max((p["sort_order"] for p in merged), default=0) + 1
+    for gh in gh_repos:
+        if gh["gh_name"] in gh_seen:
             continue
+        merged.append({
+            "id":          None,
+            "title":       gh["gh_title"],
+            "description": gh["gh_description"],
+            "details":     "",
+            "tools":       ", ".join(filter(None, [gh["gh_language"]] + gh["gh_topics"][:3])),
+            "github_link": gh["gh_github_url"],
+            "kaggle_link": "",
+            "demo_link":   gh["gh_live_url"],
+            "status":      "Completed",
+            "emoji":       gh["gh_emoji"],
+            "sort_order":  next_order,
+            "stars":       gh["gh_stars"],
+            "language":    gh["gh_language"],
+            "topics":      gh["gh_topics"],
+            "gh_updated":  gh["gh_updated"],
+            "is_from_db":  False,
+        })
+        next_order += 1
 
-        ov = overrides.get(name, {})
-
-        # Pick best emoji from topics
-        topics = repo.get("topics", [])
-        emoji = "💻"
-        for t in topics:
-            if t.lower() in EMOJI_MAP:
-                emoji = EMOJI_MAP[t.lower()]
-                break
-        if emoji == "💻":
-            lang = (repo.get("language") or "").lower()
-            emoji = EMOJI_MAP.get(lang, "💻")
-
-        # Format display name from repo slug
-        display_name = ov.get("title") or name.replace("-", " ").replace("_", " ").title()
-
-        project = {
-            "slug":        name,
-            "number":      str(i + 1).zfill(2),
-            "emoji":       ov.get("emoji", emoji),
-            "title":       display_name,
-            "description": ov.get("description") or repo.get("description") or "",
-            "live_url":    ov.get("live_url") or repo.get("homepage") or "",
-            "github_url":  repo.get("html_url", ""),
-            "stars":       repo.get("stargazers_count", 0),
-            "forks":       repo.get("forks_count", 0),
-            "language":    repo.get("language") or "",
-            "tags":        topics,
-            "updated_at":  (repo.get("updated_at") or "")[:10],
-            "status":      ov.get("status", "Completed"),
-            "key_insight": ov.get("key_insight", ""),
-            "featured":    ov.get("featured", True),
-            "order":       ov.get("order", 99 + i),
-        }
-        projects.append(project)
-
-    # Sort: featured with explicit order first, rest by last updated
-    featured   = sorted([p for p in projects if p.get("order") < 90], key=lambda x: x["order"])
-    rest       = sorted([p for p in projects if p.get("order") >= 90], key=lambda x: -x["stars"])
-    return featured + rest
-
-# ─── MASTER FUNCTION ─────────────────────────────────────────────
-def get_portfolio_data(force=False):
-    """
-    Call this in every Flask route.
-    Returns everything the portfolio needs — cached 10 min.
-
-    FLOW:
-      1. GitHub User API      → profile (auto)
-      2. GitHub Repos API     → projects (auto — new repo = auto appears)
-      3. profile repo JSON    → skills, education, certifications
-    """
-    gh       = _cached("profile", _fetch_profile,  force) or {}
-    config   = _cached("config",  _fetch_config,   force) or {}
-    projects = _cached("repos",   _fetch_repos,    force) or []
-
-    # Build skill groups
-    skills = config.get("skills", [])
-    skill_groups = {}
-    for s in skills:
-        cat = s.get("category", "Other")
-        skill_groups.setdefault(cat, []).append(s)
-
-    # Merge profile config with live GitHub data
-    profile_cfg = config.get("profile", {})
-    profile = {
-        **profile_cfg,
-        # GitHub live data always wins for these fields:
-        "avatar_url":  gh.get("avatar_url") or profile_cfg.get("avatar_url", ""),
-        "github_url":  gh.get("github_url", ""),
-        "followers":   gh.get("followers", 0),
-        "repo_count":  gh.get("repo_count", 0),
-        "name":        gh.get("name") or profile_cfg.get("name", "Gaurav Govind Nikam"),
-        "location":    gh.get("location") or profile_cfg.get("location", "Pune, India"),
-    }
-
-    return {
-        "profile":        profile,
-        "skills":         skills,
-        "skill_groups":   skill_groups,
-        "education":      config.get("education",      []),
-        "certifications": config.get("certifications", []),
-        "projects":       projects,
-        "github":         gh,
-        "last_synced":    time.strftime("%d %b %Y, %H:%M"),
-        "total_projects": len(projects),
-        "total_certs":    len(config.get("certifications", [])),
-    }
+    return sorted(merged, key=lambda x: x["sort_order"])
 
 
 def invalidate_cache():
     global _cache
     _cache = {}
-    print("[sync] Cache cleared — next request fetches fresh GitHub data.")
+    print("[github_sync] Cache cleared.")
